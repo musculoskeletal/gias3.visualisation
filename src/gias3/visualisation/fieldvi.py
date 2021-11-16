@@ -14,7 +14,9 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import logging
 
 import scipy
+
 from mayavi.core.ui.mayavi_scene import MayaviScene
+from mayavi import mlab
 from mayavi.tools.mlab_scene_model import MlabSceneModel
 from traits.api import HasTraits, Range, Bool, Button, Str, Enum, List, Instance
 from traitsui.api import View, Item, HGroup, HSplit, VGroup, Tabbed, EnumEditor, \
@@ -22,15 +24,10 @@ from traitsui.api import View, Item, HGroup, HSplit, VGroup, Tabbed, EnumEditor,
 from tvtk.api import tvtk
 from tvtk.pyface.scene_editor import SceneEditor
 
-try:
-    from mayavi import mlab
-except ImportError:
-    raise ImportError('Mayavi not installed')
-
 log = logging.getLogger(__name__)
 
 
-class Fieldvi(HasTraits):
+class FieldVi(HasTraits):
     renderAll = Button()
     renderImagePlane = Button()
     renderGeometricFields = Button()
@@ -294,7 +291,7 @@ class Fieldvi(HasTraits):
         if self.onCloseCallback is not None:
             self.onCloseCallback()
 
-    def addTri(self, name, tri, renderArgs=None):
+    def addTri(self, name, tri, render_args=None):
 
         if name not in list(self.triSurface.keys()):
             self.triCounter += 1
@@ -306,16 +303,16 @@ class Fieldvi(HasTraits):
         self.addTriScalarData(name, 'none', None)
         self.triList0 = name
 
-        if renderArgs is None:
+        if render_args is None:
             self.triRenderArgs[name] = {}
         else:
-            self.triRenderArgs[name] = renderArgs
+            self.triRenderArgs[name] = render_args
 
-    def addTriScalarData(self, triName, scalarName, scalarData):
-        self.triScalarData[triName][scalarName] = scalarData
-        self.triScalarList0 = scalarName
+    def addTriScalarData(self, tri_name, scalar_name, scalar_data):
+        self.triScalarData[tri_name][scalar_name] = scalar_data
+        self.triScalarList0 = scalar_name
 
-    def addGeometricField(self, name, G, evaluator, GD=None, renderArgs=None):
+    def addGeometricField(self, name, G, evaluator, GD=None, render_args=None):
 
         if name not in list(self.geometricFields.keys()):
             self.GFCounter += 1
@@ -332,35 +329,35 @@ class Fieldvi(HasTraits):
         self.addGeometricFieldScalarData(name, 'none', None)
         self.GFList0 = name
 
-        if renderArgs is None:
+        if render_args is None:
             self.GFRenderArgs[name] = {}
         else:
-            self.GFRenderArgs[name] = renderArgs
+            self.GFRenderArgs[name] = render_args
 
-    def addGeometricFieldScalarData(self, GFNames, scalarName, scalarData, dataType='data'):
+    def addGeometricFieldScalarData(self, gf_names, scalar_name, scalar_data, data_type='data'):
         """
         dataType is either 'data' or 'field'
         """
 
-        if isinstance(GFNames, str):
-            GFNames = [GFNames]
+        if isinstance(gf_names, str):
+            gf_names = [gf_names]
 
-        for GFName in GFNames:
-            self.GFScalarData[GFName].append(scalarName)
+        for GFName in gf_names:
+            self.GFScalarData[GFName].append(scalar_name)
 
-        self.GFScalarList0 = scalarName
-        self.scalarType[scalarName] = dataType
-        self.scalarData[scalarName] = scalarData
+        self.GFScalarList0 = scalar_name
+        self.scalarType[scalar_name] = data_type
+        self.scalarData[scalar_name] = scalar_data
         self.GFScalar = 'custom'
 
-    def addImageVolume(self, I, name=None, renderArgs=None):
+    def addImageVolume(self, I, name=None, render_args=None):
         if name is None:
             name = str(self.imageCounter)
 
-        if renderArgs is None:
+        if render_args is None:
             self.imageRenderArgs[name] = {}
         else:
-            self.imageRenderArgs[name] = renderArgs
+            self.imageRenderArgs[name] = render_args
         if name not in list(self.images.keys()):
             self.imageCounter += 1
             self.imageList.append(name)
@@ -368,7 +365,7 @@ class Fieldvi(HasTraits):
         self.imageList0 = name
         self.images[name] = I
 
-    def addData(self, name, d, scalar=None, renderArgs=None):
+    def addData(self, name, d, scalar=None, render_args=None):
 
         if name not in list(self.data.keys()):
             self.dataCounter += 1
@@ -376,10 +373,10 @@ class Fieldvi(HasTraits):
             self.PCGeomList.append(name + '::data')
 
         self.data[name] = d
-        if renderArgs is None:
+        if render_args is None:
             self.dataRenderArgs[name] = {}
         else:
-            self.dataRenderArgs[name] = renderArgs
+            self.dataRenderArgs[name] = render_args
         if scalar is not None:
             self.dataScalar[name] = scalar
         else:
@@ -406,10 +403,10 @@ class Fieldvi(HasTraits):
 
             self.dataList0 = self.dataList[-1]
 
-    def addPC(self, pcName, pc):
-        self.PCs[pcName] = pc
-        self.PCList.append(pcName)
-        self.PCList0 = pcName
+    def addPC(self, pc_name, pc):
+        self.PCs[pc_name] = pc
+        self.PCList.append(pc_name)
+        self.PCList0 = pc_name
 
     # def addPCToGF(self, pc, GFName):
     #   self.PCsGF[GFName] = pc
@@ -420,16 +417,16 @@ class Fieldvi(HasTraits):
     # def addPCToTriMesh(self, pc, triName):
     #   self.PCsTri[triName] = pc
 
-    def addSFPCA(self, pc, SFName):
+    def addSFPCA(self, pc, sf_name):
         self.SFPC = pc
-        self.SFPCFieldName = SFName
+        self.SFPCFieldName = sf_name
 
-    def addGFSFPCA(self, pc, GFName, SFName, GFRows, SFRows, comb=True):
+    def addGFSFPCA(self, pc, gf_name, sf_name, gf_rows, sf_rows, comb=True):
         self.GFSFPC = pc
-        self.GFSFGFName = GFName
-        self.GFSFSFName = SFName
-        self.GFSFGFRows = GFRows
-        self.GFSFSFRows = SFRows
+        self.GFSFGFName = gf_name
+        self.GFSFSFName = sf_name
+        self.GFSFGFRows = gf_rows
+        self.GFSFSFRows = sf_rows
         self.GFSFPCComb = comb
 
     def _saveImage_fired(self):
@@ -502,11 +499,11 @@ class Fieldvi(HasTraits):
             self._ipw_pick_callback
         )
 
-    def imagePlaneSliceIndex(self, sliceIndex=None, plane=0):
-        if sliceIndex is None:
+    def imagePlaneSliceIndex(self, slice_index=None, plane=0):
+        if slice_index is None:
             return self.sceneObjectImages[self.imageList0].widgets[plane].slice_index
         else:
-            self.sceneObjectImages[self.imageList0].widgets[plane].slice_index = sliceIndex
+            self.sceneObjectImages[self.imageList0].widgets[plane].slice_index = slice_index
 
     def _imagePlane_changed(self):
         self.sceneObjectImages[self.imageList0].widgets[0].set(plane_orientation=self.imagePlane)
@@ -775,40 +772,40 @@ class Fieldvi(HasTraits):
 
         self.scene.disable_render = False
 
-    def _evaluateScalarField(self, scalarFieldName, GFName):
+    def _evaluateScalarField(self, scalar_field_name, gf_name):
 
-        sf = self.scalarData[scalarFieldName]
+        sf = self.scalarData[scalar_field_name]
         try:
-            GFD = self.GFDSpecific[GFName]
+            GFD = self.GFDSpecific[gf_name]
         except KeyError:
             GFD = self.GFD
 
         scalarValues = sf.evaluateField(GFD)
         return scalarValues
 
-    def _getGFScalarData(self, scalarName, GFName):
+    def _getGFScalarData(self, scalar_name, gf_name):
 
-        if scalarName in list(self.scalarData.keys()):
-            if self.scalarType[scalarName] == 'field':
-                d = self._evaluateScalarField(scalarName, GFName)
+        if scalar_name in list(self.scalarData.keys()):
+            if self.scalarType[scalar_name] == 'field':
+                d = self._evaluateScalarField(scalar_name, gf_name)
             else:
-                d = self.scalarData[scalarName]
+                d = self.scalarData[scalar_name]
             return d
         else:
-            log.debug('ERROR: no scalar data called', scalarName)
+            log.debug('ERROR: no scalar data called', scalar_name)
             return None
 
-    def drawElementBoundaries(self, name, GD, evaluatorMaker, nNodesElemMap, elemBasisMap, renderArgs):
+    def drawElementBoundaries(self, name, GD, evaluator_maker, n_nodes_elem_map, elem_basis_map, render_args):
         g = self.geometricFields[name]
 
         self.bCurves[name] = {}
         for elemN in list(g.ensemble_field_function.mesh.elements.keys()):
-            self.bCurves[name][name + '_elem_' + str(elemN)] = g.makeElementBoundaryCurve(elemN, nNodesElemMap,
-                                                                                          elemBasisMap)
+            self.bCurves[name][name + '_elem_' + str(elemN)] = g.makeElementBoundaryCurve(elemN, n_nodes_elem_map,
+                                                                                          elem_basis_map)
 
         for b in self.bCurves[name]:
-            evaluator = evaluatorMaker(self.bCurves[name][b], GD)
-            self.addGeometricField(b, self.bCurves[name][b], evaluator, GD, renderArgs)
+            evaluator = evaluator_maker(self.bCurves[name][b], GD)
+            self.addGeometricField(b, self.bCurves[name][b], evaluator, GD, render_args)
             self._drawGeometricField(b)
 
     def hideElementBoundaries(self, name):
@@ -879,19 +876,19 @@ class Fieldvi(HasTraits):
 
         self.scene.disable_render = False
 
-    def drawGeometricFieldElementNumbers(self, name, textScale=5.0, textColor=(0, 0, 0)):
+    def drawGeometricFieldElementNumbers(self, name, text_scale=5.0, text_color=(0, 0, 0)):
         g = self.geometricFields[name]
         ei, ex = g.get_element_numbers(coordinates=True)
         gElemLabels = [
-            self.scene.mlab.text3d(ex[i][0], ex[i][1], ex[i][2], str(ei[i]), color=textColor, scale=textScale) for i in
+            self.scene.mlab.text3d(ex[i][0], ex[i][1], ex[i][2], str(ei[i]), color=text_color, scale=text_scale) for i in
             range(len(ei))]
         return gElemLabels
 
-    def drawGeometricFieldNodeNumbers(self, name, textScale=5.0, textColor=(0, 0, 1)):
+    def drawGeometricFieldNodeNumbers(self, name, text_scale=5.0, text_color=(0, 0, 1)):
         P = self.geometricFields[name].get_all_point_positions()
         nodeLabels = [
             self.scene.mlab.text3d(
-                P[i, 0], P[i, 1], P[i, 2], str(i), color=textColor, scale=textScale
+                P[i, 0], P[i, 1], P[i, 2], str(i), color=text_color, scale=text_scale
             ) for i in range(len(P))
         ]
         return nodeLabels
@@ -1010,8 +1007,8 @@ class Fieldvi(HasTraits):
         s = self._evaluateScalarField(self.GFSFSFName, self.GFList0)
         self.sceneObjectGF[self.GFList0].mlab_source.set(scalars=s)
 
-    def saveImagesRevolve(self, nAngles, flipRoll=False, elevation=None,
-                          distance=None, focalPoint=None, save=1):
+    def saveImagesRevolve(self, n_angles, flip_roll=False, elevation=None,
+                          distance=None, focal_point=None, save=1):
 
         fileSuffix = str(self.saveImageFilename).split('.')[-1]
         filePrefix = '.'.join(str(self.saveImageFilename).split('.')[:-1])
@@ -1022,17 +1019,17 @@ class Fieldvi(HasTraits):
             elevation = e
         if distance is None:
             distance = d
-        if focalPoint is None:
-            focalPoint = f
+        if focal_point is None:
+            focal_point = f
 
-        azimuths = azimuth + scipy.linspace(0.0, 360.0, nAngles)
+        azimuths = azimuth + scipy.linspace(0.0, 360.0, n_angles)
         azimuths = scipy.where(azimuths > 360.0, azimuths - 360.0, azimuths)
 
         for i, a in enumerate(azimuths):
             self.scene.mlab.view(
-                a, elevation, distance, focalPoint, reset_roll=True
+                a, elevation, distance, focal_point, reset_roll=True
             )
-            if flipRoll:
+            if flip_roll:
                 self.scene.mlab.roll(-self.scene.mlab.roll())
             if save:
                 filename = filePrefix + '_%(i)05i' % {'i': i} + '.' + fileSuffix
@@ -1041,17 +1038,17 @@ class Fieldvi(HasTraits):
                     size=(int(self.saveImageWidth), int(self.saveImageLength))
                 )
 
-    def saveImagesModalDeformation(self, modeN, nImages, sdRange, modeType, save=1, startNumber=0, loop=False):
+    def saveImagesModalDeformation(self, mode_n, n_images, sd_range, mode_type, save=1, start_number=0, loop=False):
 
         fileSuffix = str(self.saveImageFilename).split('.')[-1]
         filePrefix = '.'.join(str(self.saveImageFilename).split('.')[:-1])
 
-        if modeType == 'shape':
-            self.modeIndex = modeN
-        elif modeType == 'scalar':
-            self.SFModeIndex = modeN
-        elif modeType == 'shapescalar':
-            self.GFSFModeIndex = modeN
+        if mode_type == 'shape':
+            self.modeIndex = mode_n
+        elif mode_type == 'scalar':
+            self.SFModeIndex = mode_n
+        elif mode_type == 'shapescalar':
+            self.GFSFModeIndex = mode_n
         else:
             raise ValueError('unknown modeType')
 
@@ -1059,25 +1056,25 @@ class Fieldvi(HasTraits):
         # ~ self._modeIndex_changed()
 
         if not loop:
-            sdList = scipy.linspace(sdRange[0], sdRange[1], nImages)
+            sdList = scipy.linspace(sd_range[0], sd_range[1], n_images)
         else:
-            sdList = scipy.hstack([scipy.linspace(sdRange[0], sdRange[1], nImages),
-                                   scipy.linspace(sdRange[1], sdRange[0], nImages)[1:]])
+            sdList = scipy.hstack([scipy.linspace(sd_range[0], sd_range[1], n_images),
+                                   scipy.linspace(sd_range[1], sd_range[0], n_images)[1:]])
 
         for i, sd in enumerate(sdList):
 
-            if modeType == 'shape':
+            if mode_type == 'shape':
                 self.mode1 = sd
-            elif modeType == 'scalar':
+            elif mode_type == 'scalar':
                 self.SFModeWeight = sd
-            elif modeType == 'shapescalar':
+            elif mode_type == 'shapescalar':
                 self.GFSFModeWeight = sd
             else:
                 raise ValueError('unknown modeType')
             # ~ self._mode1_changed()
 
             if save:
-                filename = filePrefix + '_%(i)05i' % {'i': i + startNumber} + '.' + fileSuffix
+                filename = filePrefix + '_%(i)05i' % {'i': i + start_number} + '.' + fileSuffix
                 self.scene.mlab.savefig(filename, size=(int(self.saveImageWidth), int(self.saveImageLength)))
 
     def saveImagesGeneric(self, func, save=1):
@@ -1133,14 +1130,14 @@ class Fieldvi(HasTraits):
     # =========================================================================#
     # Lower limb atlas
     # =========================================================================#
-    def setLowerLimbAtlas(self, LL, gfEvalMaker):
+    def setLowerLimbAtlas(self, LL, gf_eval_maker):
         self.LL = LL
         self.LLParams = list(LL._neutral_params)
         self.LLParams[0] = [0.0, ] * 5
         self.LLParams[1] = scipy.arange(5)
 
         for mn, m in list(self.LL.models.items()):
-            mgfeval = gfEvalMaker(m.gf, self.GFD)
+            mgfeval = gf_eval_maker(m.gf, self.GFD)
             self.addGeometricField('LL_' + mn, m.gf, mgfeval, self.GFD)
 
     def _LLPC0_changed(self):
@@ -1251,37 +1248,37 @@ class Fieldvi(HasTraits):
     def get_ipw_picked_points(self):
         return list(self._ipw_picked_points)
 
-    def addText3D(self, name, text, origin, offset, charWidth=0.01, lineWidth=0.2):
+    def addText3D(self, name, text, origin, offset, char_width=0.01, line_width=0.2):
         """
         Adds text with a line to a point
         """
         textOrigin = scipy.array(origin) + scipy.array(offset)
         textLine = scipy.array([origin, textOrigin]).T
-        self.scene.mlab.text(textOrigin[0], textOrigin[1], text, z=textOrigin[2], width=len(text) * charWidth,
+        self.scene.mlab.text(textOrigin[0], textOrigin[1], text, z=textOrigin[2], width=len(text) * char_width,
                              name='text_' + name)
-        self.scene.mlab.plot3d(textLine[0], textLine[1], textLine[2], tube_radius=lineWidth, name='textline_' + name)
+        self.scene.mlab.plot3d(textLine[0], textLine[1], textLine[2], tube_radius=line_width, name='textline_' + name)
 
 
-def find_shaft_frame_gen(V, nFrames, direction='up', shaftMode='reveal'):
+def find_shaft_frame_gen(V, n_frames, direction='up', shaft_mode='reveal'):
     if direction == 'up':
-        slices = scipy.linspace(V.I.shape[2] - 1, 0, nFrames).astype(int)
+        slices = scipy.linspace(V.I.shape[2] - 1, 0, n_frames).astype(int)
     elif direction == 'down':
-        slices = scipy.linspace(0, V.I.shape[2] - 1, nFrames).astype(int)
+        slices = scipy.linspace(0, V.I.shape[2] - 1, n_frames).astype(int)
 
     a0, e, d, f = V.scene.mlab.view()
-    azimuths = a0 + scipy.linspace(0.0, 360.0, nFrames)
+    azimuths = a0 + scipy.linspace(0.0, 360.0, n_frames)
     azimuths = scipy.where(azimuths > 360.0, azimuths - 360.0, azimuths)
 
-    if shaftMode == 'reveal':
+    if shaft_mode == 'reveal':
         shaft0 = V.data['shaft0'].copy()
         shaft1 = V.data['shaft1'].copy()
 
-    for i in range(nFrames):
+    for i in range(n_frames):
         # set slice index
         V.imagePlaneSliceIndex(slices[i], plane=0)
 
         # set shaft data
-        if shaftMode == 'reveal':
+        if shaft_mode == 'reveal':
             V.storeView()
             V.removeData('shaft0')
             V.removeData('shaft1')

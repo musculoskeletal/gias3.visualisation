@@ -15,7 +15,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import vtk
 from numpy import uint8, array
 
-raise DeprecationWarning('Use classes in gias2.mesh.vtktools')
+raise DeprecationWarning('Use classes in gias3.mesh.vtktools')
 
 
 class Colours:
@@ -23,27 +23,27 @@ class Colours:
         self.colours = dict()
 
         red = vtk.vtkProperty()
-        red.SetColor(1.0, 0.0, 0.0);
+        red.SetColor(1.0, 0.0, 0.0)
         self.colours['red'] = red
 
         green = vtk.vtkProperty()
-        green.SetColor(0.0, 1.0, 0.0);
+        green.SetColor(0.0, 1.0, 0.0)
         self.colours['green'] = green
 
         blue = vtk.vtkProperty()
-        blue.SetColor(0.0, 0.0, 1.0);
+        blue.SetColor(0.0, 0.0, 1.0)
         self.colours['blue'] = blue
 
         magenta = vtk.vtkProperty()
-        magenta.SetColor(1.0, 0.0, 1.0);
+        magenta.SetColor(1.0, 0.0, 1.0)
         self.colours['magenta'] = magenta
 
         yellow = vtk.vtkProperty()
-        yellow.SetColor(1.0, 1.0, 0.0);
+        yellow.SetColor(1.0, 1.0, 0.0)
         self.colours['yellow'] = yellow
 
         cyan = vtk.vtkProperty()
-        cyan.SetColor(0.0, 1.0, 1.0);
+        cyan.SetColor(0.0, 1.0, 1.0)
         self.colours['cyan'] = cyan
 
     def getColour(self, colourStr):
@@ -59,7 +59,7 @@ class VtkImageVolumeRenderer:
         self.imageImporter = vtk.vtkImageImport()
         self.image = None
 
-        if image != None:
+        if image is not None:
             # get image into right format
             # ~ self.image = array( image, dtype = uint8 )
             self.image = image
@@ -98,9 +98,9 @@ class VtkImageVolumeRenderer:
     # CoM: array-like eg [x,y,z]
     # PD: list or tuple of 3 unit-vectors
     # lineScale: a list of 3 line scaling factors
-    def setCoM(self, inputCoM, PD=None, lineScale=None):
+    def setCoM(self, input_c_o_m, PD=None, line_scale=None):
 
-        CoM = list(inputCoM)
+        CoM = list(input_c_o_m)
         CoM.reverse()
         CoMSphere = vtk.vtkSphereSource()
         CoMSphere.SetCenter(CoM)
@@ -115,13 +115,13 @@ class VtkImageVolumeRenderer:
 
         self.CoMActors.append(CoMSphereActor)
 
-        if PD != None:
+        if PD is not None:
 
             # line scaling from unit length
-            if lineScale == None:
+            if line_scale is None:
                 s = array([max(self.image.shape) * 0.5] * 3)
             else:
-                s = array(lineScale) * max(self.image.shape) * (1 / max(lineScale))
+                s = array(line_scale) * max(self.image.shape) * (1 / max(line_scale))
 
             # ~ s = list( s )
             # ~ s.reverse()
@@ -134,7 +134,7 @@ class VtkImageVolumeRenderer:
 
                 self.addLine(startPoint, endPoint)
 
-    def addNode(self, coord, colourStr='red'):
+    def addNode(self, coord, colour_str='red'):
 
         coord = list(coord)
         coord.reverse()
@@ -146,12 +146,12 @@ class VtkImageVolumeRenderer:
         nodeMapper = vtk.vtkPolyDataMapper()
         nodeMapper.SetInput(node.GetOutput())
         nodeActor = vtk.vtkActor()
-        nodeActor.SetProperty(self.colours.getColour(colourStr))
+        nodeActor.SetProperty(self.colours.getColour(colour_str))
         nodeActor.SetMapper(nodeMapper)
 
         self.nodeActors.append(nodeActor)
 
-    def addLine(self, p1, p2, colourStr='red'):
+    def addLine(self, p1, p2, colour_str='red'):
         """ add a line to the scene, between points p1 and p2
         """
 
@@ -162,7 +162,7 @@ class VtkImageVolumeRenderer:
         lineMapper = vtk.vtkPolyDataMapper()
         lineMapper.SetInput(line.GetOutput())
         lineActor = vtk.vtkActor()
-        lineActor.SetProperty(self.colours.getColour(colourStr))
+        lineActor.SetProperty(self.colours.getColour(colour_str))
         lineActor.SetMapper(lineMapper)
 
         self.PDActors.append(lineActor)
@@ -186,10 +186,12 @@ class VtkImageVolumeRenderer:
     def clearNodes(self):
         self.nodeActors = []
 
-    def renderVolume(self, cRange=[0, 255], oRange=[0, 255]):
+    def renderVolume(self, c_range=None, o_range=None):
         # volume rendering
+        c_range = [0, 255] if c_range is None else c_range
+        o_range = [0, 255] if o_range is None else o_range
 
-        # Volume mapper 
+        # Volume mapper
         volumeMapper = vtk.vtkVolumeRayCastMapper()
         volumeMapper.SetInput(self.imageImporter.GetOutput())
         compositeFunc = vtk.vtkVolumeRayCastCompositeFunction()
@@ -197,15 +199,15 @@ class VtkImageVolumeRenderer:
 
         # Colour transfer functions
         colorFunc = vtk.vtkColorTransferFunction()
-        colorFunc.AddRGBPoint(cRange[0], 0.0, 0.0, 0.0)
-        colorFunc.AddRGBPoint(cRange[1], 1.0, 1.0, 1.0)
+        colorFunc.AddRGBPoint(c_range[0], 0.0, 0.0, 0.0)
+        colorFunc.AddRGBPoint(c_range[1], 1.0, 1.0, 1.0)
 
         # Opacity transfer functions
         opacityFunc = vtk.vtkPiecewiseFunction()
-        opacityFunc.AddPoint(oRange[0], 0.0)
+        opacityFunc.AddPoint(o_range[0], 0.0)
         # ~ opacity_transfer_func.AddPoint( 99, 0.0 )
         # ~ opacity_transfer_func.AddPoint( 250, 0.0 )
-        opacityFunc.AddPoint(oRange[1], 0.1)
+        opacityFunc.AddPoint(o_range[1], 0.1)
 
         # Volume properties
         volumeProperties = vtk.vtkVolumeProperty()
@@ -219,17 +221,17 @@ class VtkImageVolumeRenderer:
 
         # ~ self.volumeList.append( volume )
 
-        self._render(volumeList=[volume])
+        self._render(volume_list=[volume])
 
-    def renderContour(self, contourValueList):
+    def renderContour(self, contour_value_list):
         # render polydata contour surfaces at iso values defined in
         # list contourValueList
 
         contourExtractor = vtk.vtkContourFilter()
         contourExtractor.SetInput(self.imageImporter.GetOutput())
         # set contour values
-        for i in range(0, len(contourValueList)):
-            contourExtractor.SetValue(i, contourValueList[i])
+        for i in range(0, len(contour_value_list)):
+            contourExtractor.SetValue(i, contour_value_list[i])
 
         contourExtractor.Update()
 
@@ -241,9 +243,9 @@ class VtkImageVolumeRenderer:
 
         # ~ self.actorList.append( actor )
 
-        self._render(actorList=[actor])
+        self._render(actor_list=[actor])
 
-    def _render(self, actorList=None, volumeList=None):
+    def _render(self, actor_list=None, volume_list=None):
 
         # axes
         axes = vtk.vtkAxesActor()
@@ -268,13 +270,13 @@ class VtkImageVolumeRenderer:
         renderer.AddActor(outlineActor)
 
         # add other actors
-        if actorList:
-            for actor in actorList:
+        if actor_list:
+            for actor in actor_list:
                 renderer.AddActor(actor)
 
         # add other volumes
-        if volumeList:
-            for volume in volumeList:
+        if volume_list:
+            for volume in volume_list:
                 renderer.AddVolume(volume)
 
         # add node spheres
