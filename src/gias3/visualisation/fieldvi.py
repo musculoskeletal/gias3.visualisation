@@ -282,7 +282,7 @@ class FieldVi(HasTraits):
         self._ipw_picked_points = []
 
     def start(self):
-        self.edit_traits()
+        self.configure_traits()
 
     def addOnCloseCallback(self, callback):
         self.onCloseCallback = callback
